@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Video Downloader</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .logo svg {
+            width: 60px;
+            height: 60px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #fff;
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            background: linear-gradient(to right, #ff0050, #00f2ea);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 16px 20px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .input-group input:focus {
+            border-color: #ff0050;
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 0 20px rgba(255, 0, 80, 0.2);
+        }
+
+        .btn-download {
+            padding: 16px 28px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #ff0050, #ff4081);
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 0, 80, 0.4);
+        }
+
+        .btn-download:active {
+            transform: translateY(0);
+        }
+
+        .btn-download:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #ff0050;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+
+        .result {
+            display: none;
+            margin-top: 25px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .result.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .video-preview {
+            width: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            background: #000;
+            max-height: 350px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .video-preview video {
+            width: 100%;
+            max-height: 350px;
+            object-fit: contain;
+        }
+
+        .video-info {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .video-info h3 {
+            color: #fff;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .video-info .author {
+            color: #00f2ea;
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+        }
+
+        .video-stats {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.8rem;
+        }
+
+        .stat svg {
+            width: 16px;
+            height: 16px;
+            fill: rgba(255, 255, 255, 0.6);
+        }
+
+        .download-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .dl-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: #fff;
+        }
+
+        .dl-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .dl-btn.no-watermark {
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            box-shadow: 0 5px 20px rgba(0, 184, 148, 0.3);
+        }
+
+        .dl-btn.no-watermark:hover {
+            box-shadow: 0 10px 30px rgba(0, 184, 148, 0.5);
+        }
+
+        .dl-btn.with-watermark {
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            box-shadow: 0 5px 20px rgba(108, 92, 231, 0.3);
+        }
+
+        .dl-btn.with-watermark:hover {
+            box-shadow: 0 10px 30px rgba(108, 92, 231, 0.5);
+        }
+
+        .dl-btn.audio-btn {
+            background: linear-gradient(135deg, #fd79a8, #e84393);
+            box-shadow: 0 5px 20px rgba(232, 67, 147, 0.3);
+        }
+
+        .dl-btn.audio-btn:hover {
+            box-shadow: 0 10px 30px rgba(232, 67, 147, 0.5);
+        }
+
+        .dl-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: #fff;
+        }
+
+        .error {
+            display: none;
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 15px;
+            color: #ff4757;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .error.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .feature {
+            text-align: center;
+            padding: 12px 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .feature svg {
+            width: 24px;
+            height: 24px;
+            fill: #ff0050;
+            margin-bottom: 6px;
+        }
+
+        .feature p {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.75rem;
+        }
+
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 25px;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            h1 {
+                font-size: 1.4rem;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+            }
+
+            .video-stats {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                <path d="M34.145 13.785c-2.146-1.513-3.634-3.89-3.936-6.628-.075-.67-.11-1.348-.107-2.036h-4.77v22.328c-.012 1.176-.588 2.284-1.543 2.976-.954.693-2.186.878-3.296.497-1.11-.382-1.963-1.276-2.295-2.402-.332-1.125-.093-2.345.638-3.262.73-.917 1.873-1.418 3.042-1.35.575.03 1.14.16 1.668.385v-4.877c-.555-.074-1.117-.112-1.676-.113-4.29.005-7.97 2.99-8.83 7.194-.86 4.205 1.353 8.443 5.317 10.17 3.964 1.727 8.58.38 11.037-3.222 1.298-1.907 1.99-4.167 1.986-6.48V16.316c2.224 1.61 4.895 2.523 7.68 2.623v-4.785c-1.77-.074-3.488-.6-4.968-1.525l-.953.151z" fill="#fff"/>
+                <path d="M36.145 15.785c-2.146-1.513-3.634-3.89-3.936-6.628-.075-.67-.11-1.348-.107-2.036h-4.77v22.328c-.012 1.176-.588 2.284-1.543 2.976-.954.693-2.186.878-3.296.497-1.11-.382-1.963-1.276-2.295-2.402-.332-1.125-.093-2.345.638-3.262.73-.917 1.873-1.418 3.042-1.35.575.03 1.14.16 1.668.385v-4.877c-.555-.074-1.117-.112-1.676-.113-4.29.005-7.97 2.99-8.83 7.194-.86 4.205 1.353 8.443 5.317 10.17 3.964 1.727 8.58.38 11.037-3.222 1.298-1.907 1.99-4.167 1.986-6.48V18.316c2.224 1.61 4.895 2.523 7.68 2.623v-4.785c-1.77-.074-3.488-.6-4.968-1.525l-.953.151z" fill="url(#tiktok-grad)"/>
+                <defs>
+                    <linearGradient id="tiktok-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#00f2ea"/>
+                        <stop offset="50%" style="stop-color:#ff0050"/>
+                        <stop offset="100%" style="stop-color:#ff0050"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
+
+        <h1>TikTok Downloader</h1>
+        <p class="subtitle">Download video TikTok tanpa watermark secara gratis!</p>
+
+        <div class="input-group">
+            <input 
+                type="text" 
+                id="urlInput" 
+                placeholder="Paste link video TikTok di sini..."
+                autocomplete="off"
+            >
+            <button class="btn-download" id="fetchBtn" onclick="fetchVideo()">
+                <svg style="width:20px;height:20px;fill:#fff;vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
+                </svg>
+                Download
+            </button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Memproses video, mohon tunggu...</p>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="result" id="result">
+            <div class="video-preview" id="videoPreview"></div>
+            
+            <div class="video-info" id="videoInfo"></div>
+
+            <div class="download-buttons" id="downloadButtons"></div>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+                <p>Tanpa Watermark</p>
+            </div>
+            <div class="feature">
+                <svg viewBox="0 0 24 24"><path d="M13 2.05v3.03c3.39.49 6 3.39 6 6.92 0 .9-.18 1.75-.48 2.54l2.6 1.53c.56-1.24.88-2.62.88-4.07 0-5.18-3.95-9.45-9-9.95zM12 19c-3.87 0-7-3.13-7-7 0-3.53 2.61-6.43 6-6.92V2.05c-5.06.5-9 4.76-9 9.95 0 5.52 4.47 10 9.99 10 3.31 0 6.24-1.61 8.06-4.09l-2.6-1.53C16.17 17.98 14.21 19 12 19z"/></svg>
+                <p>Kecepatan Tinggi</p>
+            </div>
+            <div class="feature">
+                <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                <p>Download MP3</p>
+            </div>
+        </div>
+
+        <footer>
+            <p>© 2026 TikTok Downloader | Dibuat untuk tujuan edukasi</p>
+        </footer>
+    </div>
+
+    <script>
+        const urlInput = document.getElementById('urlInput');
+        const fetchBtn = document.getElementById('fetchBtn');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const result = document.getElementById('result');
+
+        // Allow Enter key to trigger download
+        urlInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                fetchVideo();
+            }
+        });
+
+        async function fetchVideo() {
+            const url = urlInput.value.trim();
+
+            if (!url) {
+                showError('Masukkan link video TikTok terlebih dahulu!');
+                return;
+            }
+
+            if (!isValidTikTokUrl(url)) {
+                showError('Link tidak valid! Pastikan link berasal dari TikTok.');
+                return;
+            }
+
+            // Reset UI
+            hideError();
+            result.classList.remove('active');
+            loading.classList.add('active');
+            fetchBtn.disabled = true;
+
+            try {
+                const response = await fetch('https://tikwm.com/api/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `url=${encodeURIComponent(url)}&count=12&cursor=0&web=1&hd=1`
+                });
+
+                const data = await response.json();
+
+                if (data.code === 0 && data.data) {
+                    displayResult(data.data);
+                } else {
+                    showError(data.msg || 'Gagal memproses video. Periksa kembali link Anda.');
+                }
+            } catch (err) {
+                showError('Terjadi kesalahan koneksi. Silakan coba lagi. Error: ' + err.message);
+            } finally {
+                loading.classList.remove('active');
+                fetchBtn.disabled = false;
+            }
+        }
+
+        function displayResult(data) {
+            const videoPreview = document.getElementById('videoPreview');
+            const videoInfo = document.getElementById('videoInfo');
+            const downloadButtons = document.getElementById('downloadButtons');
+
+            // Video preview
+            videoPreview.innerHTML = `
+                <video controls>
+                    <source src="${data.play}" type="video/mp4">
+                    Browser Anda tidak mendukung pemutaran video.
+                </video>
+            `;
+
+            // Video info
+            const author = data.author || {};
+            const title = data.title || 'Tanpa judul';
+            const likes = formatNumber(data.digg_count || 0);
+            const comments = formatNumber(data.comment_count || 0);
+            const shares = formatNumber(data.share_count || 0);
+            const plays = formatNumber(data.play_count || 0);
+
+            videoInfo.innerHTML = `
+                <h3>${title}</h3>
+                <p class="author">@${author.unique_id || 'unknown'} • ${author.nickname || ''}</p>
+                <div class="video-stats">
+                    <span class="stat">
+                        <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                        ${likes}
+                    </span>
+                    <span class="stat">
+                        <svg viewBox="0 0 24 24"><path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18z"/></svg>
+                        ${comments}
+                    </span>
+                    <span class="stat">
+                        <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+                        ${shares}
+                    </span>
+                    <span class="stat">
+                        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        ${plays}
+                    </span>
+                </div>
+            `;
+
+            // Download buttons
+            let buttonsHTML = '';
+
+            // HD video without watermark
+            if (data.hdplay) {
+                buttonsHTML += `
+                    <a href="${data.hdplay}" target="_blank" class="dl-btn no-watermark">
+                        <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        Download HD (Tanpa Watermark)
+                    </a>
+                `;
+            }
+
+            // Video without watermark
+            if (data.play) {
+                buttonsHTML += `
+                    <a href="${data.play}" target="_blank" class="dl-btn no-watermark" style="background: linear-gradient(135deg, #00b894, #00cec9);">
+                        <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        Download SD (Tanpa Watermark)
+                    </a>
+                `;
+            }
+
+            // Video with watermark
+            if (data.wmplay) {
+                buttonsHTML += `
+                    <a href="${data.wmplay}" target="_blank" class="dl-btn with-watermark">
+                        <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        Download (Dengan Watermark)
+                    </a>
+                `;
+            }
+
+            // Audio/Music
+            if (data.music) {
+                buttonsHTML += `
+                    <a href="${data.music}" target="_blank" class="dl-btn audio-btn">
+                        <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                        Download Audio (MP3)
+                    </a>
+                `;
+            }
+
+            downloadButtons.innerHTML = buttonsHTML;
+            result.classList.add('active');
+        }
+
+        function isValidTikTokUrl(url) {
+            const patterns = [
+                /tiktok\.com/i,
+                /vm\.tiktok\.com/i,
+                /vt\.tiktok\.com/i,
+                /douyin\.com/i
+            ];
+            return patterns.some(pattern => pattern.test(url));
+        }
+
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toString();
+        }
+
+        function showError(msg) {
+            error.textContent = msg;
+            error.classList.add('active');
+        }
+
+        function hideError() {
+            error.classList.remove('active');
+        }
+    </script>
+</body>
+</html>
